@@ -1,22 +1,22 @@
 export class Stack<I> {
-  private _stack: I[] = [];
+  private _stack: I[] = []
 
   get length() {
-    return this._stack.length;
+    return this._stack.length
   }
 
   get() {
     if (this.length === 0) {
-      return null;
+      return null
     }
-    return this._stack.pop();
+    return this._stack.pop()
   }
 
   put(...item: I[]) {
-    return this._stack.push(...item);
+    return this._stack.push(...item)
   }
 
   clear() {
-    this._stack = [];
+    this._stack = []
   }
 }

@@ -1,5 +1,5 @@
-import { StackTrace } from "./stackTrace";
-import { DebugAsyncFn, DebugSyncFn } from "./decorator";
+import {StackTrace} from './stackTrace'
+import {DebugAsyncFn, DebugSyncFn} from './decorator'
 
 export const Debug = {
   StackTrace,
@@ -7,4 +7,4 @@ export const Debug = {
     DebugAsyncFn,
     DebugSyncFn,
   },
-};
+}

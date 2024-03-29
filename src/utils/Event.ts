@@ -1,53 +1,50 @@
-import { StackTrace } from "../debug/stackTrace";
-import { compose } from "../functional/compose";
+import {StackTrace} from '../debug/stackTrace'
+import {compose} from '../functional/compose'
 
-export const WarnListenerSize = 1000;
+export const WarnListenerSize = 1000
 export interface Event<T> {
-  (listener: (e: T) => any, thisArgs?: any): { dispose: () => void };
+  (listener: (e: T) => any, thisArgs?: any): {dispose: () => void}
 }
 
-let id = 0;
+let id = 0
 class UniqueContainer<T> {
-  stack?: StackTrace;
-  public id = id++;
+  stack?: StackTrace
+  public id = id++
   public dispose: () => void = () => {
     //@ts-ignore
-    this.stack = null;
+    this.stack = null
     //@ts-ignore
-    this.dispose = null;
+    this.dispose = null
     //@ts-ignore
-    this.value = null;
-  };
+    this.value = null
+  }
   constructor(public readonly value: T) {}
   setDisposeFunc(dispose: () => void) {
-    this.dispose = compose(dispose, this.dispose);
+    this.dispose = compose(dispose, this.dispose)
   }
 }
-type ListenerContainer<T> = UniqueContainer<(data: T) => void>;
-type Listeners<T> = (ListenerContainer<T> | undefined)[];
+type ListenerContainer<T> = UniqueContainer<(data: T) => void>
+type Listeners<T> = (ListenerContainer<T> | undefined)[]
 
-const forEachListener = <T>(
-  listeners: Listeners<T>,
-  fn: (c: ListenerContainer<T>) => void
-) => {
+const forEachListener = <T>(listeners: Listeners<T>, fn: (c: ListenerContainer<T>) => void) => {
   if (listeners instanceof UniqueContainer) {
-    fn(listeners);
+    fn(listeners)
   } else {
     for (let i = 0; i < listeners.length; i++) {
-      const l = listeners[i];
+      const l = listeners[i]
       if (l) {
-        fn(l);
+        fn(l)
       }
     }
   }
-};
+}
 
 export interface EmitterOptions<T> {
-  onWillAddFirstListener?: () => void;
-  onDidAddFirstListener?: () => void;
-  onListenerError?: (e: any) => void;
-  onWillDispose?: (listenerContainer: ListenerContainer<T>) => void;
-  onDidDispose?: (listenerContainer: ListenerContainer<T>) => void;
+  onWillAddFirstListener?: () => void
+  onDidAddFirstListener?: () => void
+  onListenerError?: (e: any) => void
+  onWillDispose?: (listenerContainer: ListenerContainer<T>) => void
+  onDidDispose?: (listenerContainer: ListenerContainer<T>) => void
 }
 /**
  * example:
@@ -63,12 +60,12 @@ export interface EmitterOptions<T> {
  *
  */
 export class Emitter<T> {
-  private _event?: Event<T>;
-  protected _listeners?: Listeners<T>;
-  protected _options?: EmitterOptions<T>;
+  private _event?: Event<T>
+  protected _listeners?: Listeners<T>
+  protected _options?: EmitterOptions<T>
 
   constructor(options?: EmitterOptions<T>) {
-    this._options = options;
+    this._options = options
   }
 
   /**
@@ -78,13 +75,13 @@ export class Emitter<T> {
   disposeAllListeners() {
     if (this._listeners) {
       forEachListener(this._listeners, (listener) => {
-        listener.dispose();
-      });
+        listener.dispose()
+      })
     }
   }
 
   get listenerSize() {
-    return this._listeners?.length || 0;
+    return this._listeners?.length || 0
   }
 
   /**
@@ -94,7 +91,7 @@ export class Emitter<T> {
   get event(): Event<T> {
     this._event ??= (listener: (e: T) => any, thisArgs?: any) => {
       if (thisArgs) {
-        listener = listener.bind(thisArgs);
+        listener = listener.bind(thisArgs)
       }
 
       const dispose = () => {
@@ -104,57 +101,52 @@ export class Emitter<T> {
         So the check here can be removed and, for safety's sake, retained
         */
         if (!this._listeners) {
-          return;
+          return
         }
-        this._options?.onWillDispose?.(contained);
-        const index = this._listeners!.indexOf(contained);
+        this._options?.onWillDispose?.(contained)
+        const index = this._listeners!.indexOf(contained)
         if (index >= 0) {
-          this._listeners!.splice(index, 1);
+          this._listeners!.splice(index, 1)
         }
-        this._options?.onDidDispose?.(contained);
-      };
+        this._options?.onDidDispose?.(contained)
+      }
 
-      const contained = new UniqueContainer(listener);
-      contained.stack = StackTrace.create();
-      contained.setDisposeFunc(dispose);
+      const contained = new UniqueContainer(listener)
+      contained.stack = StackTrace.create()
+      contained.setDisposeFunc(dispose)
 
       if (!this._listeners) {
-        this._options?.onWillAddFirstListener?.();
-        this._listeners = [contained];
-        this._options?.onDidAddFirstListener?.();
+        this._options?.onWillAddFirstListener?.()
+        this._listeners = [contained]
+        this._options?.onDidAddFirstListener?.()
       } else {
         if (this._listeners.length > WarnListenerSize) {
-          console.warn(
-            `listeners size is too large, current size is ${this._listeners.length}`
-          );
+          console.warn(`listeners size is too large, current size is ${this._listeners.length}`)
         }
-        this._listeners.push(contained);
+        this._listeners.push(contained)
       }
 
       return {
         dispose: contained.dispose,
-      };
-    };
+      }
+    }
 
-    return this._event;
+    return this._event
   }
 
-  private _deliver(
-    listener: undefined | UniqueContainer<(value: T) => void>,
-    value: T
-  ) {
+  private _deliver(listener: undefined | UniqueContainer<(value: T) => void>, value: T) {
     if (!listener) {
-      return;
+      return
     }
-    const errorHandler = this._options?.onListenerError;
+    const errorHandler = this._options?.onListenerError
     if (!errorHandler) {
-      listener.value(value);
-      return;
+      listener.value(value)
+      return
     }
     try {
-      listener.value(value);
+      listener.value(value)
     } catch (e) {
-      errorHandler(e);
+      errorHandler(e)
     }
   }
 
@@ -164,12 +156,12 @@ export class Emitter<T> {
    */
   fire(data: T): void {
     if (!this._listeners) {
-      return;
+      return
     } else {
-      const listeners = this._listeners.slice();
+      const listeners = this._listeners.slice()
       forEachListener(listeners, (listener) => {
-        this._deliver(listener, data);
-      });
+        this._deliver(listener, data)
+      })
     }
   }
 
@@ -178,6 +170,6 @@ export class Emitter<T> {
    * @description_en Trigger event，alias of fire
    */
   emit(data: T): void {
-    this.fire(data);
+    this.fire(data)
   }
 }
