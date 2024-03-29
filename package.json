@@ -1,0 +1,46 @@
+{
+  "name": "@wwog/dev",
+  "version": "0.0.1",
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "types"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "unbuild",
+    "play": "jiti playground",
+    "format": "biome format --write src",
+    "check": "biome check --apply src",
+    "test": "pnpm check && pnpm test:types && vitest run --coverage",
+    "test:types": "tsc --noEmit --skipLibCheck",
+    "preinstall": "npx only-allow pnpm"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.6.3",
+    "@types/node": "^20.11.30",
+    "@vitest/coverage-v8": "^1.4.0",
+    "jiti": "^1.21.0",
+    "typescript": "^5.4.3",
+    "unbuild": "^2.0.0",
+    "vitest": "^1.4.0"
+  },
+  "engines": {
+    "node": ">= 20.0.0",
+    "pnpm": ">=8.15.0"
+  }
+}
