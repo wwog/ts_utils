@@ -1,5 +1,6 @@
 import {StackTrace} from '../debug/stackTrace'
 import {compose} from '../functional/compose'
+import { LinkedList } from '../struct/linkedList'
 
 export const WarnListenerSize = 1000
 export interface Event<T> {
@@ -171,5 +172,108 @@ export class Emitter<T> {
    */
   emit(data: T): void {
     this.fire(data)
+  }
+}
+
+
+export type EventCallback = (...args: any[]) => any
+
+export type EventListener = {
+  key: string
+  callback: EventCallback
+  once: boolean
+}
+
+export class EventEmitter<T extends object> {
+  private listeners: {[event: string]: LinkedList<EventListener> | undefined}
+  private __ee_count__ = 0
+
+  constructor() {
+    this.listeners = {}
+  }
+
+  private generateEventKey() {
+    return `event-${this.__ee_count__++}`
+  }
+
+  private _addListener(event: string, callback: EventCallback, once: boolean) {
+    if (this.listeners[event] === undefined) {
+      this.listeners[event] = new LinkedList()
+    }
+    const key = this.generateEventKey()
+    this.listeners[event]!.push({key, callback, once})
+    return key
+  }
+
+  on<K extends keyof T>(event: K, callback: T[K]) {
+    return this._addListener(event as string, callback as EventCallback, false)
+  }
+
+  once<K extends keyof T>(event: K, callback: T[K]) {
+    return this._addListener(event as string, callback as EventCallback, true)
+  }
+
+  /**
+   * @param key 监听方法返回的key
+   * @param key the key returned by the listener
+   */
+  offByKey(key: string) {
+    for (const event in this.listeners) {
+      const isOwn = Object.prototype.hasOwnProperty.call(this.listeners, event)
+      if (!isOwn) {
+        continue
+      }
+      if (this.listeners[event] === undefined) {
+        continue
+      }
+      if (this.listeners[event]!.isEmpty()) {
+        continue
+      }
+      const removeNodes = this.listeners[event]!.findAll((el) => el.key === key)
+      if (removeNodes.length === 0) {
+        continue
+      }
+      removeNodes.forEach((node) => {
+        this.listeners[event]!.removeNode(node)
+      })
+    }
+  }
+
+  offByEvent(event: string) {
+    this.listeners[event] = undefined
+  }
+
+  off(event: keyof T, callback: EventCallback) {
+    if (this.listeners[event as string] === undefined) {
+      return
+    }
+    if (this.listeners[event as string]!.isEmpty()) {
+      return
+    }
+    const removeNodes = this.listeners[event as string]!.findAll((el) => el.callback === callback)
+    if (removeNodes.length === 0) {
+      return
+    }
+    removeNodes.forEach((node) => {
+      this.listeners[event as string]!.removeNode(node)
+    })
+  }
+
+  offAll() {
+    this.listeners = {}
+  }
+
+  emit(event: keyof T, ...args: any[]) {
+    if (this.listeners[event as string] === undefined) {
+      return
+    }
+    for (const item of this.listeners[event as string]!) {
+      item.callback(...args)
+      if (item.once) {
+        this.listeners[event as string]!.remove((element) => {
+          return element === item
+        })
+      }
+    }
   }
 }
