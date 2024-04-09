@@ -48,6 +48,7 @@ export interface EmitterOptions<T> {
   onDidDispose?: (listenerContainer: ListenerContainer<T>) => void
 }
 /**
+ * ```
  * example:
  *  const emitter = new Emitter<string>();
  *  const onCloseWindow = emitter.event
@@ -58,7 +59,7 @@ export interface EmitterOptions<T> {
  *  onCloseWindow((data) => {
  *   console.log("2", data);
  *  });
- *
+ * ```
  */
 export class Emitter<T> {
   private _event?: Event<T>
